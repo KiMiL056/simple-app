@@ -1,7 +1,5 @@
-FROM python:3.10-slim
-WORKDIR /app
-COPY requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt
+FROM php:8.2-fpm
+WORKDIR /var/www
 COPY . .
-EXPOSE 5000
-CMD ["python", "app.py"]
+EXPOSE 9000
+CMD ["php-fpm"]
