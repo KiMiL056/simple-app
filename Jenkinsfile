@@ -26,6 +26,7 @@ pipeline {
             }
         }
 
+        
         stage('Login Docker Hub') {
             steps {
                 withCredentials([usernamePassword(
@@ -35,11 +36,16 @@ pipeline {
                 )]) {
                     bat '''
                         @echo off
-                        docker login -u "%DOCKER_USER%" --password-stdin < nul
+                        if "%DOCKER_TOKEN%"=="" (
+                            echo ERROR: Docker token kosong!
+                            exit /b 1
+                        )
+                        echo %DOCKER_TOKEN% | docker login -u "%DOCKER_USER%" --password-stdin
                     '''
                 }
             }
         }
+
 
         stage('Push Docker Image') {
             steps {
