@@ -1,25 +1,43 @@
 pipeline {
-  agent any
-  environment {
-    IMAGE_NAME = 'youruser/simple-app'
-    REGISTRY_CREDENTIALS = 'dockerhub-credentials'
-  }
-  stages {
-    stage('Checkout') { steps { checkout scm } }
-    stage('Build') { steps { bat 'echo "Build di Windows"' } }
-    stage('Build Docker Image') {
-      steps { bat "docker build -t %IMAGE_NAME%:%BUILD_NUMBER% ." }
+    agent any
+
+    environment {
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub-token')
+        IMAGE_NAME = 'mubarak060506/simple-app'
     }
-    stage('Push Docker Image') {
-      steps {
-        withCredentials([usernamePassword(credentialsId: REGISTRY_CREDENTIALS,
-            usernameVariable: 'USER', passwordVariable: 'PASS')]) {
-          bat 'docker login -u %USER% -p %PASS%'
-          bat "docker push %IMAGE_NAME%:%BUILD_NUMBER%"
-          bat "docker tag %IMAGE_NAME%:%BUILD_NUMBER% %IMAGE_NAME%:latest"
-          bat "docker push %IMAGE_NAME%:latest"
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
         }
-      }
+
+        stage('Build') {
+            steps {
+                echo 'Build di Windows'
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                bat "docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} ."
+                bat "docker tag ${IMAGE_NAME}:${BUILD_NUMBER} ${IMAGE_NAME}:latest"
+            }
+        }
+
+        stage('Push Docker Image') {
+            steps {
+                bat "echo %DOCKERHUB_CREDENTIALS_PSW% | docker login -u %DOCKERHUB_CREDENTIALS_USR% --password-stdin"
+                bat "docker push ${IMAGE_NAME}:${BUILD_NUMBER}"
+                bat "docker push ${IMAGE_NAME}:latest"
+            }
+        }
     }
-  }
+
+    post {
+        always {
+            bat "docker logout"
+        }
+    }
 }
