@@ -28,7 +28,6 @@ pipeline {
 
         stage('Push Docker Image') {
             steps {
-                bat "echo %DOCKERHUB_CREDENTIALS_PSW% | docker login -u %DOCKERHUB_CREDENTIALS_USR% --password-stdin"
                 bat "docker push ${IMAGE_NAME}:${BUILD_NUMBER}"
                 bat "docker push ${IMAGE_NAME}:latest"
             }
