@@ -1,8 +1,8 @@
+
 pipeline {
     agent any
 
     environment {
-        DOCKERHUB_CREDENTIALS = credentials('dockerhub-token')
         IMAGE_NAME = 'mubarak060506/simple-app'
     }
 
@@ -26,17 +26,46 @@ pipeline {
             }
         }
 
+        stage('Login Docker Hub') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub-token',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_TOKEN'
+                )]) {
+                    bat '''
+                        @echo off
+                        docker login -u "%DOCKER_USER%" --password-stdin < nul
+                    '''
+                }
+            }
+        }
+
         stage('Push Docker Image') {
             steps {
-                bat "docker push ${IMAGE_NAME}:${BUILD_NUMBER}"
-                bat "docker push ${IMAGE_NAME}:latest"
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub-token',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_TOKEN'
+                )]) {
+                    bat '''
+                        @echo off
+                        echo %DOCKER_TOKEN% | docker login -u "%DOCKER_USER%" --password-stdin
+                        if errorlevel 1 exit /b 1
+
+                        docker push %DOCKER_USER%/simple-app:%BUILD_NUMBER%
+                        if errorlevel 1 exit /b 1
+
+                        docker push %DOCKER_USER%/simple-app:latest
+                    '''
+                }
             }
         }
     }
 
     post {
         always {
-            bat "docker logout"
+            bat 'docker logout'
         }
     }
 }
